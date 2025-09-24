@@ -1,0 +1,2 @@
+timestamp,test_name,jsonl_filename,total_samples,normal_count,anomaly_count,anomaly_ratio,kafka_streaming_success,accuracy,precision,recall,f1_score,total_predictions,avg_processing_time_ms,cache_hit_rate,kafka_messages_processed
+2025-09-15 20:21:36,eval_test_10,hdfs_eval_test_10.jsonl,10000,9000,1000,0.1,True,0.9633,0.9968602825745683,0.635,0.7758094074526574,10000,35.03149588755829,0.6836,10000

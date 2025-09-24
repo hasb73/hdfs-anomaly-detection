@@ -1,0 +1,55 @@
+services:
+  zookeeper:
+    image: bitnami/zookeeper:3
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports: ["2181:2181"]
+
+  kafka:
+    image: bitnami/kafka:3
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+    ports: ["9092:9092"]
+    depends_on:
+      - zookeeper
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+  embedding:
+    build: ./embedding_service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - qdrant
+
+
+
+  scoring_service:
+    build: ./scoring_service
+    ports: ["8002:8002"]
+    environment:
+      - ENSEMBLE_MODEL_PATH=/ensemble/models/line_level_ensemble/line_level_ensemble_results.joblib
+      - EMBEDDING_SERVICE_URL=http://embedding:8000
+    volumes:
+      - ./models:/models
+    restart: unless-stopped
+    depends_on:
+      - embedding
+      - redis
+
+  redis:
+    image: redis:7.0-alpine
+    ports: ["6379:6379"]
+
+
+volumes:
+  qdrant_storage:

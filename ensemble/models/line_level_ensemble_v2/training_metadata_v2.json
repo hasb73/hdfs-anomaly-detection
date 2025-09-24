@@ -1,0 +1,78 @@
+{
+  "sample_size": 200000,
+  "feature_dim": 384,
+  "anomaly_ratio": 0.002175,
+  "training_samples": 160000,
+  "validation_samples": 40000,
+  "model_types": [
+    "Decision Tree",
+    "MLP",
+    "SGD",
+    "Qdrant Similarity"
+  ],
+  "model_scores": {
+    "dt": {
+      "precision": 0.06541353383458647,
+      "recall": 1.0,
+      "f1": 0.12279463655610445
+    },
+    "mlp": {
+      "precision": 0.8064516129032258,
+      "recall": 0.5747126436781609,
+      "f1": 0.6711409395973155
+    },
+    "sgd": {
+      "precision": 0.06169296987087518,
+      "recall": 0.9885057471264368,
+      "f1": 0.11613774476704929
+    },
+    "qdrant_similarity": {
+      "precision": 0.7352941176470589,
+      "recall": 0.5747126436781609,
+      "f1": 0.6451612903225806
+    }
+  },
+  "best_hyperparameters": {
+    "dt": {
+      "criterion": "entropy",
+      "max_depth": null,
+      "min_samples_leaf": 3,
+      "min_samples_split": 2
+    },
+    "mlp": {
+      "activation": "tanh",
+      "alpha": 0.0001,
+      "hidden_layer_sizes": [
+        50
+      ],
+      "max_iter": 300
+    },
+    "sgd": {
+      "loss": "hinge",
+      "penalty": "l1",
+      "alpha": 0.001,
+      "learning_rate": "constant",
+      "eta0": 0.1,
+      "max_iter": 5000,
+      "early_stopping": true,
+      "validation_fraction": 0.1,
+      "n_iter_no_change": 10,
+      "tol": 0.0001
+    },
+    "qdrant_similarity": {
+      "threshold": 0.9
+    }
+  },
+  "model_weights": {
+    "dt": 0.0789556994606483,
+    "mlp": 0.43153678213275726,
+    "sgd": 0.07467538590478259,
+    "qdrant_similarity": 0.4148321325018118
+  },
+  "qdrant_config": {
+    "collection_name": "training_embeddings",
+    "threshold": 0.9,
+    "host": "localhost",
+    "port": 6333
+  }
+}
