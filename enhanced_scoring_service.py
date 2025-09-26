@@ -20,7 +20,6 @@ import datetime
 import logging
 import sqlite3
 from contextlib import contextmanager
-import pandas as pd
 from collections import defaultdict
 
 # Configure logging

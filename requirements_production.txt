@@ -4,8 +4,8 @@
 # Core dependencies from anomaly_evaluation.py
 kafka-python==2.0.2
 requests==2.31.0
-pandas==2.0.3
 urllib3==2.0.4
+# pandas==2.0.3  # Removed - not used in scoring service
 
 # File system monitoring
 watchdog==3.0.0
