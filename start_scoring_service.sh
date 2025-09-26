@@ -7,7 +7,7 @@ echo "🚀 Starting HDFS Anomaly Detection Engine V2 in background..."
 
 # Set environment variables
 export ENABLE_KAFKA_CONSUMER=true
-export ENSEMBLE_MODEL_PATH="/Users/hasanb/Desktop/MDX-DOCS/CST-4090/code/thesis_real_time_log_anomaly_repo/ensemble/models/line_level_ensemble_v2/line_level_ensemble_v2_results.joblib"
+export ENSEMBLE_MODEL_PATH="./ensemble/models/line_level_ensemble_v2/line_level_ensemble_v2_results.joblib"
 export EMBEDDING_SERVICE_URL="http://localhost:8000"
 export KAFKA_SERVERS="localhost:9092"
 export KAFKA_TOPIC="logs"
