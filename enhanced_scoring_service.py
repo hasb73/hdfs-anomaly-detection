@@ -609,7 +609,7 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
         logger.debug("🔄 Using simple average voting (including Qdrant)")
     
     # Lower threshold for better recall
-    anomaly_threshold = 0.3
+    anomaly_threshold = 0.6
     final_prediction = int(anomaly_score > anomaly_threshold)
     
     # Debug logging for threshold decision (changed to INFO to ensure it shows)
