@@ -20,6 +20,7 @@ import datetime
 import logging
 import sqlite3
 from contextlib import contextmanager
+import pandas as pd
 from collections import defaultdict
 
 # Configure logging
@@ -651,7 +652,7 @@ def score_text_enhanced(payload: TextPayload):
         # Check cache first
         cached_result = get_cached_result(text_hash)
         if cached_result:
-            logger.info(f"🎯 Returning cached result for: {text[:50]}...")
+            logger.info(f"🎯 Returning cached result for: {text}")
             
             # Count cached API predictions too
             stats['total_predictions'] += 1
@@ -701,9 +702,9 @@ def score_text_enhanced(payload: TextPayload):
         # Log significant events with Qdrant details
         qdrant_info = result['qdrant_details']
         if result['prediction'] == 1:
-            logger.warning(f"🚨 ANOMALY DETECTED: {text[:80]}... (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
+            logger.warning(f"🚨 ANOMALY DETECTED: {text} (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
         else:
-            logger.info(f"✅ NORMAL: {text[:50]}... (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
+            logger.info(f"✅ NORMAL: {text} (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
         
         # Add detailed voting breakdown to response
         result_dict = enhanced_result.dict()
@@ -767,7 +768,7 @@ def score_with_actual_label(text: str, actual_label: int):
         
         # Log result
         correct = "✅" if predicted_label == actual_label else "❌"
-        logger.info(f"{correct} Pred:{predicted_label} Actual:{actual_label} Score:{result['anomaly_score']:.3f} | {text[:60]}...")
+        logger.info(f"{correct} Pred:{predicted_label} Actual:{actual_label} Score:{result['anomaly_score']:.3f} | {text}")
         
         return {
             'predicted_label': predicted_label,
@@ -971,7 +972,7 @@ def enhanced_kafka_consumer_worker():
                     cached_result = get_cached_result(text_hash)
                     if cached_result:
                         result_dict = cached_result
-                        logger.info(f"🎯 Kafka: Using cached result for {text[:50]}...")
+                        logger.info(f"🎯 Kafka: Using cached result for {text}")
                         
                         # Count cached Kafka predictions too
                         stats['total_predictions'] += 1
@@ -983,7 +984,7 @@ def enhanced_kafka_consumer_worker():
                             predicted_label = result_dict.get('predicted_label', 0)
                             update_accuracy_metrics(predicted_label, actual_label)
                             correct = "✅" if predicted_label == actual_label else "❌"
-                            logger.info(f"{correct} Kafka (cached): Pred:{predicted_label} Actual:{actual_label} | {text[:60]}...")
+                            logger.info(f"{correct} Kafka (cached): Pred:{predicted_label} Actual:{actual_label} | {text}")
                     else:
                         # Get embedding and predict
                         embedding = get_embedding_from_qdrant_or_service(text)
@@ -1020,7 +1021,7 @@ def enhanced_kafka_consumer_worker():
                             if actual_label is not None:
                                 update_accuracy_metrics(result['prediction'], actual_label)
                                 correct = "✅" if result['prediction'] == actual_label else "❌"
-                                logger.info(f"{correct} Kafka: Pred:{result['prediction']} Actual:{actual_label} | {text[:60]}...")
+                                logger.info(f"{correct} Kafka: Pred:{result['prediction']} Actual:{actual_label} | {text}")
                             
                             result_dict = enhanced_result.dict()
                             
@@ -1033,7 +1034,7 @@ def enhanced_kafka_consumer_worker():
                     
                     # Log high-confidence anomalies
                     if result_dict.get('predicted_label') == 1 and result_dict.get('confidence', 0) > 0.8:
-                        logger.warning(f"🚨 HIGH-CONFIDENCE KAFKA ANOMALY: {text[:80]}... (score: {result_dict.get('anomaly_score', 0):.3f})")
+                        logger.warning(f"🚨 HIGH-CONFIDENCE KAFKA ANOMALY: {text} (score: {result_dict.get('anomaly_score', 0):.3f})")
                 
             except Exception as e:
                 logger.error(f"Error processing Kafka message: {e}")
@@ -1189,7 +1190,7 @@ def test_qdrant_vote(text: str):
         qdrant_vote_info = get_qdrant_similarity_vote(embedding, text)
         
         return {
-            'text': text[:100] + "..." if len(text) > 100 else text,
+            'text': text,
             'qdrant_vote_details': qdrant_vote_info,
             'qdrant_available': qdrant_client is not None
         }
