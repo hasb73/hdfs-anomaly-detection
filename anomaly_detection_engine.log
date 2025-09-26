@@ -1,0 +1,48 @@
+2025-09-26 16:07:04,059 - __main__ - INFO - 🚀 Starting Real-Time HDFS Anomaly Detection Engine...
+2025-09-26 16:07:04,061 - __main__ - INFO -  Database initialized: anomaly_detection.db
+2025-09-26 16:07:04,065 - __main__ - INFO - ✅ Connected to Redis at localhost:6379
+2025-09-26 16:07:04,101 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-09-26 16:07:04,101 - __main__ - INFO - ✅ Connected to Qdrant at localhost:6333
+2025-09-26 16:07:04,101 - __main__ - INFO - 📥 Loading ensemble model from ./ensemble/models/line_level_ensemble_v2/line_level_ensemble_v2_results.joblib
+2025-09-26 16:07:04,731 - __main__ - INFO - ✅ Loaded ensemble with 3 models
+2025-09-26 16:07:04,731 - __main__ - INFO - 🎯 Model weights for weighted voting:
+2025-09-26 16:07:04,731 - __main__ - INFO -    dt: 0.0790
+2025-09-26 16:07:04,731 - __main__ - INFO -    mlp: 0.4315
+2025-09-26 16:07:04,731 - __main__ - INFO -    sgd: 0.0747
+2025-09-26 16:07:04,731 - __main__ - INFO -    qdrant_similarity: 0.4148
+2025-09-26 16:07:04,732 - __main__ - INFO - 📡 Enhanced Kafka consumer started
+2025-09-26 16:07:04,732 - __main__ - INFO - ✅ Real-Time Anomaly Detection Engine ready!
+2025-09-26 16:07:04,732 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2025-09-26 16:07:04,740 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <checking_api_versions_recv> [IPv6 ('::1', 9092, 0, 0)]>: Broker version identified as 2.6
+2025-09-26 16:07:04,740 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Connection complete.
+2025-09-26 16:07:04,740 - kafka.consumer.subscription_state - INFO - Updating subscribed topics to: ('logs',)
+2025-09-26 16:07:04,740 - __main__ - INFO - 📡 Enhanced Kafka consumer listening to topic: logs
+2025-09-26 16:07:04,751 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2025-09-26 16:07:04,857 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=1 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Connection complete.
+2025-09-26 16:07:04,857 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. 
+2025-09-26 16:07:04,971 - kafka.cluster - INFO - Coordinator for group/anomaly_engine_1758888424 is BrokerMetadata(nodeId='coordinator-1', host='localhost', port=9092, rack=None)
+2025-09-26 16:07:04,971 - kafka.coordinator - INFO - Discovered coordinator coordinator-1 for group anomaly_engine_1758888424
+2025-09-26 16:07:04,972 - kafka.coordinator.heartbeat - INFO - Starting new heartbeat thread
+2025-09-26 16:07:04,973 - kafka.coordinator.consumer - INFO - Revoking previously assigned partitions set() for group anomaly_engine_1758888424
+2025-09-26 16:07:04,973 - kafka.coordinator - INFO - Failed to join group anomaly_engine_1758888424: NodeNotReadyError: coordinator-1
+2025-09-26 16:07:04,974 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2025-09-26 16:07:05,076 - kafka.coordinator - INFO - Failed to join group anomaly_engine_1758888424: NodeNotReadyError: coordinator-1
+2025-09-26 16:07:05,076 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-1 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Connection complete.
+2025-09-26 16:07:05,179 - kafka.coordinator - INFO - (Re-)joining group anomaly_engine_1758888424
+2025-09-26 16:07:05,189 - kafka.coordinator - INFO - Received member id kafka-python-2.2.15-0da5e8f5-7eba-40b3-b98e-2ba8369af83d for group anomaly_engine_1758888424; will retry join-group
+2025-09-26 16:07:05,189 - kafka.coordinator - INFO - Failed to join group anomaly_engine_1758888424: [Error 79] MemberIdRequiredError
+2025-09-26 16:07:05,189 - kafka.coordinator - INFO - (Re-)joining group anomaly_engine_1758888424
+2025-09-26 16:07:05,207 - kafka.coordinator - INFO - Successfully joined group anomaly_engine_1758888424 <Generation 1 (member_id: kafka-python-2.2.15-0da5e8f5-7eba-40b3-b98e-2ba8369af83d, protocol: range)>
+2025-09-26 16:07:05,207 - kafka.coordinator - INFO - Elected group leader -- performing partition assignments using range
+2025-09-26 16:07:05,218 - kafka.consumer.subscription_state - INFO - Updated partition assignment: [TopicPartition(topic='logs', partition=0)]
+2025-09-26 16:07:05,218 - kafka.coordinator.consumer - INFO - Setting newly assigned partitions {TopicPartition(topic='logs', partition=0)} for group anomaly_engine_1758888424
+2025-09-26 16:07:05,224 - kafka.consumer.fetcher - INFO - Resetting offset for partition TopicPartition(topic='logs', partition=0) to offset 236035.
+2025-09-26 16:07:08,192 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-09-26 16:07:21,892 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/logs_embeddings/points/search "HTTP/1.1 200 OK"
+2025-09-26 16:07:21,893 - __main__ - INFO - 🔄 Fallback to embedding service
+2025-09-26 16:07:21,907 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/logs_embeddings/points/search "HTTP/1.1 200 OK"
+2025-09-26 16:07:21,909 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/logs_embeddings/points/search "HTTP/1.1 200 OK"
+2025-09-26 16:07:21,910 - __main__ - INFO - 🎯 Weighted Voting: [dt:0(w:0.079), mlp:1(w:0.432), sgd:1(w:0.075), qdrant_similarity:0(w:0.415)] → Score:0.5062 (simple_avg:0.5000)
+2025-09-26 16:07:21,910 - __main__ - INFO - 🎯 THRESHOLD DECISION: score=0.506212, threshold=0.6, score>threshold=False, prediction=0
+2025-09-26 16:07:21,912 - __main__ - INFO -  Cached result for hash cb5e100e... (TTL: 3600s)
+2025-09-26 16:07:21,912 - __main__ - INFO - ✅ NORMAL: error... (score: 0.506, qdrant_vote: 0, similar: 0, time: 37.7ms)
