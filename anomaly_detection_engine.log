@@ -39,3 +39,43 @@
 2025-09-26 16:18:14,383 - kafka.consumer.fetcher - INFO - Resetting offset for partition TopicPartition(topic='logs', partition=0) to offset 236035.
 2025-09-26 16:18:15,209 - __main__ - INFO - 🗑️ Cleared 1 cached results
 2025-09-26 16:18:17,241 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-09-26 17:56:44,881 - __main__ - INFO - 🚀 Starting Real-Time HDFS Anomaly Detection Engine...
+2025-09-26 17:56:44,882 - __main__ - INFO -  Database initialized: anomaly_detection.db
+2025-09-26 17:56:44,891 - __main__ - INFO - ✅ Connected to Redis at localhost:6379
+2025-09-26 17:56:44,948 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-09-26 17:56:44,948 - __main__ - INFO - ✅ Connected to Qdrant at localhost:6333
+2025-09-26 17:56:44,948 - __main__ - INFO - 📥 Loading ensemble model from ./ensemble/models/line_level_ensemble_v2/line_level_ensemble_v2_results.joblib
+2025-09-26 17:56:45,691 - __main__ - INFO - ✅ Loaded ensemble with 3 models
+2025-09-26 17:56:45,691 - __main__ - INFO - 🎯 Model weights for weighted voting:
+2025-09-26 17:56:45,691 - __main__ - INFO -    dt: 0.0790
+2025-09-26 17:56:45,691 - __main__ - INFO -    mlp: 0.4315
+2025-09-26 17:56:45,691 - __main__ - INFO -    sgd: 0.0747
+2025-09-26 17:56:45,691 - __main__ - INFO -    qdrant_similarity: 0.4148
+2025-09-26 17:56:45,692 - __main__ - INFO - 📡 Enhanced Kafka consumer started
+2025-09-26 17:56:45,692 - __main__ - INFO - ✅ Real-Time Anomaly Detection Engine ready!
+2025-09-26 17:56:45,693 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2025-09-26 17:56:45,715 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <checking_api_versions_recv> [IPv6 ('::1', 9092, 0, 0)]>: Broker version identified as 2.6
+2025-09-26 17:56:45,715 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Connection complete.
+2025-09-26 17:56:45,716 - kafka.consumer.subscription_state - INFO - Updating subscribed topics to: ('logs',)
+2025-09-26 17:56:45,716 - __main__ - INFO - 📡 Enhanced Kafka consumer listening to topic: logs
+2025-09-26 17:56:45,719 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2025-09-26 17:56:45,825 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=1 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Connection complete.
+2025-09-26 17:56:45,825 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. 
+2025-09-26 17:56:45,937 - kafka.cluster - INFO - Coordinator for group/anomaly_engine_1758895005 is BrokerMetadata(nodeId='coordinator-1', host='localhost', port=9092, rack=None)
+2025-09-26 17:56:45,937 - kafka.coordinator - INFO - Discovered coordinator coordinator-1 for group anomaly_engine_1758895005
+2025-09-26 17:56:45,937 - kafka.coordinator.heartbeat - INFO - Starting new heartbeat thread
+2025-09-26 17:56:45,937 - kafka.coordinator.consumer - INFO - Revoking previously assigned partitions set() for group anomaly_engine_1758895005
+2025-09-26 17:56:45,937 - kafka.coordinator - INFO - Failed to join group anomaly_engine_1758895005: NodeNotReadyError: coordinator-1
+2025-09-26 17:56:45,938 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2025-09-26 17:56:46,042 - kafka.coordinator - INFO - Failed to join group anomaly_engine_1758895005: NodeNotReadyError: coordinator-1
+2025-09-26 17:56:46,042 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-1 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]>: Connection complete.
+2025-09-26 17:56:46,146 - kafka.coordinator - INFO - (Re-)joining group anomaly_engine_1758895005
+2025-09-26 17:56:46,162 - kafka.coordinator - INFO - Received member id kafka-python-2.2.15-ed5eebdf-af54-4a8c-9cfd-fa8d407aa235 for group anomaly_engine_1758895005; will retry join-group
+2025-09-26 17:56:46,162 - kafka.coordinator - INFO - Failed to join group anomaly_engine_1758895005: [Error 79] MemberIdRequiredError
+2025-09-26 17:56:46,162 - kafka.coordinator - INFO - (Re-)joining group anomaly_engine_1758895005
+2025-09-26 17:56:46,187 - kafka.coordinator - INFO - Successfully joined group anomaly_engine_1758895005 <Generation 1 (member_id: kafka-python-2.2.15-ed5eebdf-af54-4a8c-9cfd-fa8d407aa235, protocol: range)>
+2025-09-26 17:56:46,187 - kafka.coordinator - INFO - Elected group leader -- performing partition assignments using range
+2025-09-26 17:56:46,214 - kafka.consumer.subscription_state - INFO - Updated partition assignment: [TopicPartition(topic='logs', partition=0)]
+2025-09-26 17:56:46,214 - kafka.coordinator.consumer - INFO - Setting newly assigned partitions {TopicPartition(topic='logs', partition=0)} for group anomaly_engine_1758895005
+2025-09-26 17:56:46,220 - kafka.consumer.fetcher - INFO - Resetting offset for partition TopicPartition(topic='logs', partition=0) to offset 236035.
+2025-09-26 17:56:48,851 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
