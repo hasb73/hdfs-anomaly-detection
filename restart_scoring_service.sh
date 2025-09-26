@@ -42,6 +42,8 @@ echo ""
 # Run in background and redirect output to log file
 nohup /usr/bin/python3 enhanced_scoring_service.py --background > scoring_service.log 2>&1 &
 
+
+echo "clear cache"
 curl  localhost:8003/cache/clear
 
 # Get the process ID
