@@ -2,7 +2,7 @@ from qdrant_client import QdrantClient
 client = QdrantClient(host="localhost", port=6333)
 
 # HDFS collection name (using existing logs_embeddings collection)
-COL = "training_embeddings"
+COL = "logs_embeddings"
 
 print(f"🔍 HDFS QDRANT ENTRIES VIEWER")
 print("=" * 50)

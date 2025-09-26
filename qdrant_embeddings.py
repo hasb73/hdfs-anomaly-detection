@@ -14,7 +14,7 @@ try:
     print(f'📋 Available collections: {collection_names}')
     
     # Try to get logs_embeddings collection (HDFS data)
-    collection_name = 'training_embeddings'
+    collection_name = 'logs_embeddings'
     if collection_name not in collection_names:
         print(f'⚠️  Collection "{collection_name}" not found!')
         print(f'💡 Available collections: {collection_names}')
