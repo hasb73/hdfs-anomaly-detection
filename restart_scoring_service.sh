@@ -6,7 +6,7 @@ echo "stopping amomaly detection on 8003"
 
 lsof -ti:8003 | xargs kill -9
 
-echo "🚀 Starting HDFS Anomaly Detection Engine V2 in background..."
+echo " Starting HDFS Anomaly Detection Engine V2 in background..."
 
 # Set environment variables
 export ENABLE_KAFKA_CONSUMER=true
@@ -41,6 +41,8 @@ echo ""
 
 # Run in background and redirect output to log file
 nohup /usr/bin/python3 enhanced_scoring_service.py --background > scoring_service.log 2>&1 &
+
+curl  localhost:8003/cache/clear
 
 # Get the process ID
 SERVICE_PID=$!
