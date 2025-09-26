@@ -68,26 +68,6 @@ detect_hdfs_log_file() {
     exit 1
 }
 
-# Install system dependencies
-install_system_deps() {
-    print_status "Installing system dependencies..."
-    
-    # Update package manager
-    if command -v yum &> /dev/null; then
-        yum update -y
-        yum install -y python3
-    elif command -v apt-get &> /dev/null; then
-        apt-get update
-        apt-get install -y python3
-    else
-        print_error "Unsupported package manager. Please install Python 3.8+ manually."
-        exit 1
-    fi
-    
-    print_success "System dependencies installed"
-    print_warning "Note: Python dependencies need to be installed manually"
-    print_warning "Required packages: kafka-python, requests, pandas, urllib3, watchdog"
-}
 
 # Setup application directory
 setup_app_directory() {
@@ -105,30 +85,6 @@ setup_app_directory() {
     print_success "Application directory created: $INSTALL_DIR"
 }
 
-# Create requirements file for reference
-create_requirements_file() {
-    print_status "Creating requirements file for reference..."
-    
-    # Create requirements file
-    cat > "$INSTALL_DIR/requirements.txt" << 'EOF'
-# Python dependencies - install manually with:
-# pip3 install kafka-python requests pandas urllib3 watchdog
-
-kafka-python==2.0.2
-requests==2.31.0
-pandas==2.0.3
-urllib3==2.0.4
-watchdog==3.0.0
-setuptools>=65.0.0
-wheel>=0.37.0
-EOF
-    
-    chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/requirements.txt"
-    
-    print_success "Requirements file created for reference"
-    print_warning "Please install Python dependencies manually:"
-    print_warning "pip3 install kafka-python requests pandas urllib3 watchdog"
-}
 
 # Create configuration file
 create_config() {
@@ -284,9 +240,7 @@ main() {
     
     # Run deployment steps
     check_root
-    install_system_deps
     setup_app_directory
-    create_requirements_file
     deploy_app_files
     create_config
     create_systemd_service
