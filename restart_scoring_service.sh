@@ -43,8 +43,7 @@ echo ""
 nohup /usr/bin/python3 enhanced_scoring_service.py --background > scoring_service.log 2>&1 &
 
 
-echo "clear cache"
-curl  localhost:8003/cache/clear
+
 
 # Get the process ID
 SERVICE_PID=$!
@@ -63,6 +62,9 @@ echo ""
 sleep 3
 if ps -p $SERVICE_PID > /dev/null; then
     echo " Service is running successfully!"
+
+        echo "clearing cache"
+        curl  -X POST localhost:8003/cache/clear
     
     # Try to test the health endpoint
     if command -v curl &> /dev/null; then
