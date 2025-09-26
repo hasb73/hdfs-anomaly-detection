@@ -21,6 +21,12 @@ curl -s -X GET "http://localhost:8003/anomalies" | python3 -c "import json, sys;
 curl -X GET http://localhost:8003/cache/stats
 
 
+#spark submit 
+
+spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.0 spark_job.py
+
+
+
 #Test embedding creation
 
 curl -X POST http://localhost:8000/embed \

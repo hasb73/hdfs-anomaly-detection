@@ -138,52 +138,8 @@ class HDFSLogPreprocessor:
         if not log_line or not log_line.strip():
             return False
         
-        # Skip overly verbose DEBUG logs that are not anomaly-relevant
-        skip_patterns = [
-            'Received block',
-            'Sent block',
-            'HDFS_READ',
-            'HDFS_WRITE',
-            'Successfully sent block',
-            'Wrote block',
-            'PacketReceiver',
-            'PacketResponder',
-            'Successfully verified checksum',
-        ]
-        
-        # Include ERROR, WARN, and certain INFO patterns
-        include_patterns = [
-            'ERROR',
-            'WARN',
-            'Exception',
-            'Failed',
-            'timeout',
-            'connection',
-            'Invalid',
-            'corrupt',
-            'missing',
-            'denied',
-            'Unable to',
-            'Cannot',
-        ]
-        
-        log_upper = log_line.upper()
-        
-        # Skip verbose operational logs
-        for skip_pattern in skip_patterns:
-            if skip_pattern.upper() in log_upper:
-                return False
-        
-        # Include logs with anomaly indicators
-        for include_pattern in include_patterns:
-            if include_pattern.upper() in log_upper:
-                return True
-        
-        # Include all INFO level logs (after filtering out verbose ones)
-        if ' INFO ' in log_line:
-            return True
-        
-        return False
+        # FILTERING REMOVED - Process ALL log entries for testing
+        return True
 
 class HDFSLogTailer(FileSystemEventHandler):
     """Tails HDFS log files and processes new log entries"""
@@ -285,9 +241,13 @@ class HDFSLogTailer(FileSystemEventHandler):
                 self.stats['lines_sent_to_kafka'] += 1
                 self.stats['lines_processed'] += 1
                 
-                # Log significant events
+                # Log all processed entries (with level indication)
                 if log_level in ['ERROR', 'WARN']:
                     logger.info(f"🚨 {log_level}: {processed_line[:100]}...")
+                elif log_level in ['DEBUG', 'TRACE']:
+                    logger.debug(f"🔍 {log_level}: {processed_line[:100]}...")
+                else:
+                    logger.debug(f"📝 {log_level}: {processed_line[:100]}...")
                 
             except Exception as e:
                 logger.error(f"❌ Error processing line: {e}")
