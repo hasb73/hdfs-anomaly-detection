@@ -31,7 +31,7 @@ curl -X POST http://localhost:8000/embed \
 
 curl -X POST http://localhost:8003/score \
   -H "Content-Type: application/json" \
-  -d '{"text": "Unexpected error trying to delete block blk_8156514969688064600. BlockInfo not found in volumeMap"}'
+  -d '{"text": "2025-09-26 11:04:12,208 DEBUG org.apache.hadoop.hdfs.server.datanode.DataNode (DataXceiver for client DFSClient_NONMAPREDUCE_1480472633_1 at /172.31.36.192:59076 [Sending block BP-904282469-172.31.36.192-1758638658492:blk_1073742025_1201]): Error reading client status response. Will close connection."}'
 
 
 

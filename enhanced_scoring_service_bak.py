@@ -43,12 +43,6 @@ class TextPayload(BaseModel):
 class BatchPayload(BaseModel):
     texts: List[str]
 
-class QdrantDetails(BaseModel):
-    vote: int
-    confidence: float
-    similar_count: int
-    method: str
-
 class AnomalyResult(BaseModel):
     text: str
     predicted_label: int
@@ -59,7 +53,6 @@ class AnomalyResult(BaseModel):
     source: str
     timestamp: str
     processing_time_ms: float
-    qdrant_details: Optional[QdrantDetails] = None
 
 app = FastAPI(title="HDFS Real-Time Anomaly Detection Engine", version="2.0.0")
 
@@ -346,91 +339,6 @@ def search_qdrant_by_text(text: str, limit: int = 1) -> Optional[List[Dict]]:
         logger.error(f"Qdrant search error: {e}")
         return None
 
-def get_qdrant_similarity_vote(embedding: List[float], text: str) -> Dict:
-    """Get Qdrant similarity-based anomaly vote"""
-    global stats
-    
-    if qdrant_client is None:
-        return {'vote': 0, 'confidence': 0.0, 'similar_count': 0, 'method': 'no_qdrant'}
-    
-    try:
-        # Search for similar embeddings with different thresholds
-        high_similarity_results = qdrant_client.search(
-            collection_name=QDRANT_COLLECTION,
-            query_vector=embedding,
-            limit=10,
-            score_threshold=0.90,  # High similarity threshold
-            with_payload=True
-        )
-        
-        medium_similarity_results = qdrant_client.search(
-            collection_name=QDRANT_COLLECTION,
-            query_vector=embedding,
-            limit=20,
-            score_threshold=0.75,  # Medium similarity threshold
-            with_payload=True
-        )
-        
-        stats['qdrant_queries'] += 2
-        
-        # Analyze similarity patterns
-        high_sim_anomalies = 0
-        high_sim_normal = 0
-        med_sim_anomalies = 0
-        med_sim_normal = 0
-        
-        # Count high similarity matches
-        for result in high_similarity_results:
-            if result.payload and result.payload.get('label') == 1:
-                high_sim_anomalies += 1
-            else:
-                high_sim_normal += 1
-        
-        # Count medium similarity matches
-        for result in medium_similarity_results:
-            if result.payload and result.payload.get('label') == 1:
-                med_sim_anomalies += 1
-            else:
-                med_sim_normal += 1
-        
-        # Decision logic based on similarity patterns
-        total_high = high_sim_anomalies + high_sim_normal
-        total_medium = med_sim_anomalies + med_sim_normal
-        
-        # Priority to high similarity matches
-        if total_high > 0:
-            anomaly_ratio = high_sim_anomalies / total_high
-            confidence = min(0.9, 0.5 + (anomaly_ratio * 0.4))  # Scale confidence
-            vote = 1 if anomaly_ratio > 0.5 else 0
-            method = f'high_sim_{total_high}'
-        elif total_medium > 2:  # Need reasonable sample size
-            anomaly_ratio = med_sim_anomalies / total_medium
-            confidence = min(0.7, 0.3 + (anomaly_ratio * 0.4))  # Lower confidence for medium similarity
-            vote = 1 if anomaly_ratio > 0.6 else 0  # Higher threshold for medium similarity
-            method = f'med_sim_{total_medium}'
-        else:
-            # No sufficient similarity data - neutral vote
-            vote = 0
-            confidence = 0.1
-            method = 'insufficient_data'
-        
-        logger.debug(f"🔍 Qdrant vote: {vote} (conf: {confidence:.3f}, method: {method})")
-        
-        return {
-            'vote': vote,
-            'confidence': confidence,
-            'similar_count': total_high + total_medium,
-            'method': method,
-            'high_sim_matches': total_high,
-            'high_sim_anomalies': high_sim_anomalies,
-            'med_sim_matches': total_medium,
-            'med_sim_anomalies': med_sim_anomalies
-        }
-        
-    except Exception as e:
-        logger.error(f"Qdrant similarity vote error: {e}")
-        return {'vote': 0, 'confidence': 0.0, 'similar_count': 0, 'method': 'error'}
-
 def get_embedding_from_qdrant_or_service(text: str) -> Optional[List[float]]:
     """Get embedding from Qdrant first, then embedding service as fallback"""
     
@@ -516,8 +424,8 @@ def get_embedding(text: str) -> Optional[List[float]]:
         logger.error(f"Embedding service error: {e}")
         return None
 
-def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
-    """Make prediction using ensemble model with weighted voting including Qdrant similarity"""
+def predict_ensemble(embedding: np.ndarray) -> Dict:
+    """Make prediction using ensemble model with weighted voting"""
     global stats
     
     if models_cache is None:
@@ -536,7 +444,6 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
     predictions = []
     model_names = []
     
-    # Get traditional ML model predictions
     models = models_cache.get('models', {})
     for name, model in models.items():
         if hasattr(model, 'predict'):
@@ -549,28 +456,12 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
                 predictions.append(0)
                 model_names.append(name)
     
-    # Get Qdrant similarity-based vote
-    qdrant_vote_info = get_qdrant_similarity_vote(embedding.flatten().tolist(), text)
-    qdrant_vote = qdrant_vote_info['vote']
-    qdrant_confidence = qdrant_vote_info['confidence']
-    
-    # Add Qdrant vote to the ensemble
-    predictions.append(qdrant_vote)
-    model_names.append('qdrant_similarity')
-    
     votes = np.array(predictions)
     
     # Check if we have saved model weights for weighted voting
     model_weights = models_cache.get('model_weights', {})
-    
-    # Add Qdrant weight if not present (give it reasonable weight based on confidence)
-    if 'qdrant_similarity' not in model_weights:
-        qdrant_weight = min(0.3, qdrant_confidence * 0.5)  # Max 30% weight, scaled by confidence
-        model_weights = model_weights.copy() if model_weights else {}
-        model_weights['qdrant_similarity'] = qdrant_weight
-    
     if model_weights and len(model_weights) > 0:
-        # Use weighted voting including Qdrant
+        # Use weighted voting
         weights = []
         for name in model_names:
             weight = model_weights.get(name, 0.1)  # Default weight if not found
@@ -578,66 +469,33 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
         
         weights = np.array(weights)
         if weights.sum() > 0:
-            weights_normalized = weights / weights.sum()  # Normalize weights
-            anomaly_score = float(np.average(votes, weights=weights_normalized))
-            
-            # Enhanced logging to show voting details
-            voting_details = []
-            for i, (name, vote, weight) in enumerate(zip(model_names, votes, weights_normalized)):
-                voting_details.append(f"{name}:{vote}(w:{weight:.3f})")
-            
-            simple_avg = float(votes.mean())
-            logger.info(f"🎯 Weighted Voting: [{', '.join(voting_details)}] → Score:{anomaly_score:.4f} (simple_avg:{simple_avg:.4f})")
-            
-            # Debug logging to catch the bug
-            logger.debug(f"🔍 Debug: votes={votes.tolist()}, normalized_weights={weights_normalized.tolist()}, calculated_score={anomaly_score}")
-            
-            # Sanity check: if all votes are the same, score should equal that vote
-            if len(set(votes)) == 1:
-                expected_score = float(votes[0])
-                if abs(anomaly_score - expected_score) > 0.00001:
-                    logger.error(f"❌ BUG DETECTED: Unanimous vote {expected_score} but calculated score {anomaly_score}")
-                else:
-                    logger.debug(f"✅ Unanimous vote calculation correct: {anomaly_score}")
+            weights = weights / weights.sum()  # Normalize weights
+            anomaly_score = float(np.average(votes, weights=weights))
+            logger.debug(f"🎯 Using weighted voting: {dict(zip(model_names, weights))}")
         else:
             # Fallback to simple average
             anomaly_score = float(votes.mean())
             logger.warning("⚠️ All weights are zero, falling back to simple average")
     else:
-        # Fallback to simple average voting (including Qdrant)
+        # Fallback to simple average voting
         anomaly_score = float(votes.mean())
-        logger.debug("🔄 Using simple average voting (including Qdrant)")
+        logger.debug("🔄 Using simple average voting (no weights available)")
     
-    # Lower threshold for better recall
+    # Lower threshold for better recall (was 0.5)
     anomaly_threshold = 0.3
     final_prediction = int(anomaly_score > anomaly_threshold)
-    
-    # Debug logging for threshold decision (changed to INFO to ensure it shows)
-    logger.info(f"🎯 THRESHOLD DECISION: score={anomaly_score:.6f}, threshold={anomaly_threshold}, score>threshold={anomaly_score > anomaly_threshold}, prediction={final_prediction}")
-    
-    # Note: It's normal for anomaly_score to equal a model weight when only that model votes 1
-    # This happens because weights are pre-normalized, so single-voter scenarios = that model's weight
     
     stats['total_predictions'] += 1
     if final_prediction == 1:
         stats['anomalies_detected'] += 1
     
-    # Create enhanced model votes dict with Qdrant details
-    model_votes_dict = dict(zip(model_names, predictions))
-    
     return {
         'prediction': final_prediction,
         'anomaly_score': anomaly_score,
         'confidence': max(anomaly_score, 1 - anomaly_score),
-        'model_votes': model_votes_dict,
+        'model_votes': dict(zip(model_names, predictions)),
         'vote_counts': {'normal': int(np.sum(votes == 0)), 'anomaly': int(np.sum(votes == 1))},
-        'weights_used': model_weights if model_weights else 'equal_weights',
-        'qdrant_details': {
-            'vote': qdrant_vote,
-            'confidence': qdrant_confidence,
-            'similar_count': qdrant_vote_info['similar_count'],
-            'method': qdrant_vote_info['method']
-        }
+        'weights_used': model_weights if model_weights else 'equal_weights'
     }
 
 @app.post('/score')
@@ -666,8 +524,8 @@ def score_text_enhanced(payload: TextPayload):
         if embedding is None:
             raise HTTPException(status_code=500, detail="Failed to get embedding")
         
-        # Make prediction (now includes Qdrant similarity voting)
-        result = predict_ensemble(np.array(embedding), text)
+        # Make prediction
+        result = predict_ensemble(np.array(embedding))
         processing_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
         # Update average processing time
@@ -688,8 +546,7 @@ def score_text_enhanced(payload: TextPayload):
             model_votes=result['model_votes'],
             source='api',
             timestamp=datetime.datetime.now().isoformat(),
-            processing_time_ms=processing_time,
-            qdrant_details=QdrantDetails(**result['qdrant_details'])
+            processing_time_ms=processing_time
         )
         
         # Store in database
@@ -699,21 +556,11 @@ def score_text_enhanced(payload: TextPayload):
         result_dict = enhanced_result.dict()
         cache_result(text_hash, result_dict)
         
-        # Log significant events with Qdrant details
-        qdrant_info = result['qdrant_details']
+        # Log significant events
         if result['prediction'] == 1:
-            logger.warning(f"🚨 ANOMALY DETECTED: {text[:80]}... (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
+            logger.warning(f"🚨 ANOMALY DETECTED: {text[:80]}... (score: {result['anomaly_score']:.3f}, time: {processing_time:.1f}ms)")
         else:
-            logger.info(f"✅ NORMAL: {text[:50]}... (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
-        
-        # Add detailed voting breakdown to response
-        result_dict = enhanced_result.dict()
-        result_dict['voting_breakdown'] = {
-            'traditional_models': {k: v for k, v in result['model_votes'].items() if k != 'qdrant_similarity'},
-            'qdrant_similarity': result['model_votes'].get('qdrant_similarity', 0),
-            'qdrant_confidence': qdrant_info['confidence'],
-            'qdrant_method': qdrant_info['method']
-        }
+            logger.info(f"✅ NORMAL: {text[:50]}... (score: {result['anomaly_score']:.3f}, time: {processing_time:.1f}ms)")
         
         return result_dict
         
@@ -732,7 +579,7 @@ def score_with_actual_label(text: str, actual_label: int):
         if embedding is None:
             raise HTTPException(status_code=500, detail="Failed to get embedding")
         
-        result = predict_ensemble(np.array(embedding), text)
+        result = predict_ensemble(np.array(embedding))
         processing_time = (time.time() - start_time) * 1000
         
         predicted_label = result['prediction']
@@ -759,8 +606,7 @@ def score_with_actual_label(text: str, actual_label: int):
             model_votes=result['model_votes'],
             source='labeled_test',
             timestamp=datetime.datetime.now().isoformat(),
-            processing_time_ms=processing_time,
-            qdrant_details=QdrantDetails(**result['qdrant_details'])
+            processing_time_ms=processing_time
         )
         
         # Store in database
@@ -989,7 +835,7 @@ def enhanced_kafka_consumer_worker():
                         # Get embedding and predict
                         embedding = get_embedding_from_qdrant_or_service(text)
                         if embedding:
-                            result = predict_ensemble(np.array(embedding), text)
+                            result = predict_ensemble(np.array(embedding))
                             processing_time = (time.time() - start_time) * 1000
                             
                             # Update average processing time
@@ -1010,8 +856,7 @@ def enhanced_kafka_consumer_worker():
                                 model_votes=result['model_votes'],
                                 source='kafka_stream',
                                 timestamp=datetime.datetime.now().isoformat(),
-                                processing_time_ms=processing_time,
-                                qdrant_details=QdrantDetails(**result['qdrant_details'])
+                                processing_time_ms=processing_time
                             )
                             
                             # Store in database
@@ -1153,50 +998,6 @@ def get_cache_stats():
     except Exception as e:
         logger.error(f"Cache stats error: {e}")
         return {'redis_available': False, 'error': str(e)}
-
-@app.get('/model_info')
-def get_model_info():
-    """Get detailed information about the ensemble model and Qdrant integration"""
-    if models_cache is None:
-        return {'error': 'No model loaded'}
-    
-    models = models_cache.get('models', {})
-    model_weights = models_cache.get('model_weights', {})
-    
-    model_info = {
-        'traditional_models': list(models.keys()),
-        'model_weights': model_weights,
-        'qdrant_integration': {
-            'enabled': qdrant_client is not None,
-            'collection': QDRANT_COLLECTION,
-            'host': QDRANT_HOST,
-            'port': QDRANT_PORT
-        },
-        'voting_strategy': 'weighted' if model_weights else 'equal_weight',
-        'ensemble_performance': models_cache.get('ensemble_score', {}),
-        'total_voting_models': len(models) + (1 if qdrant_client else 0)
-    }
-    
-    return model_info
-
-@app.post('/test_qdrant_vote')
-def test_qdrant_vote(text: str):
-    """Test Qdrant similarity voting for a specific text"""
-    try:
-        embedding = get_embedding(text)
-        if not embedding:
-            return {'error': 'Failed to get embedding'}
-        
-        qdrant_vote_info = get_qdrant_similarity_vote(embedding, text)
-        
-        return {
-            'text': text[:100] + "..." if len(text) > 100 else text,
-            'qdrant_vote_details': qdrant_vote_info,
-            'qdrant_available': qdrant_client is not None
-        }
-        
-    except Exception as e:
-        return {'error': str(e)}
 
 @app.get('/health')
 def health_check():
