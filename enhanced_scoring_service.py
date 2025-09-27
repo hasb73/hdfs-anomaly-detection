@@ -525,6 +525,10 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
     """Make prediction using ensemble model with weighted voting including Qdrant similarity"""
     global stats
     
+    # LOG THE HDFS ENTRY HERE WHERE WE KNOW IT WORKS
+    if text:
+        logger.error(f"🔍 HDFS Log Entry (from predict_ensemble): {text}")
+    
     if models_cache is None:
         raise HTTPException(status_code=500, detail='Ensemble model not loaded')
     
