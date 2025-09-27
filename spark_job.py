@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
-Enhanced Spark Streaming Job for HDFS Line-Level Log Processing
-Processes individual HDFS log lines from Kafka with line-level anomaly labels,
-generates embeddings, and stores in Qdrant for real-time anomaly detection
+Production Spark Streaming Job for HDFS Log Processing
+Processes HDFS log lines from Kafka, generates embeddings, and stores in Qdrant.
+The scoring service handles anoprint("📊 Streaming started! Processing HDFS production logs...")
+print("   - Reading from Kafka topic: logs")
+print("   - Processing HDFS log entries from production system")
+print("   - Generating embeddings via embedding service")
+print("   - Storing vectors in Qdrant collection: logs_embeddings")
+print("   - Scoring service will handle anomaly detection")
+print("   - Processing every 10 seconds")etection and predictions.
 """
 # Suppress urllib3 SSL warnings
 import warnings
@@ -114,14 +120,13 @@ def foreach_batch_hdfs(df, epoch_id):
     
     print(f"   Batch size: {len(rows)} messages")
     
-    # Extract messages and metadata - Updated for production log format
+    # Extract messages and metadata - Production mode: no labels needed
     messages = []
     metadata = []
     
     for row in rows:
         messages.append(row['message'])
         metadata.append({
-            'label': row['label'] if row['label'] is not None else 0,  # Default to 0 if no label
             'timestamp': row['timestamp'],
             'original_text': row['original_text'],
             'log_level': row['log_level'],
@@ -149,17 +154,12 @@ def foreach_batch_hdfs(df, epoch_id):
         print(f"    Embedding call failed: {e}")
         return
     
-    # Prepare points for Qdrant - Updated for production log format
+    # Prepare points for Qdrant - Production mode: just store embeddings
     points = []
-    anomaly_count = 0
     
     for i, (embedding, meta) in enumerate(zip(embs, metadata)):
         # Create unique ID using hash of message + timestamp
         point_id = abs(hash(f"{messages[i]}_{meta['timestamp']}")) % (2**63)
-        
-        # Count anomalies
-        if meta['label'] == 1:
-            anomaly_count += 1
         
         point = qm.PointStruct(
             id=point_id,
@@ -167,12 +167,11 @@ def foreach_batch_hdfs(df, epoch_id):
             payload={
                 "text": messages[i],
                 "original_text": meta['original_text'],
-                "label": meta['label'],
                 "timestamp": meta['timestamp'],
                 "log_level": meta['log_level'],
                 "source": meta['source'],
-                "node_type": meta['node_type'],
-                "is_anomaly": meta['label'] == 1
+                "node_type": meta['node_type']
+                # Note: No label or is_anomaly - scoring service will determine this
             }
         )
         points.append(point)
@@ -186,11 +185,10 @@ def foreach_batch_hdfs(df, epoch_id):
             wait=True
         )
         
-        normal_count = len(points) - anomaly_count
-        print(f"    Batch {epoch_id} processed: {normal_count} normal, {anomaly_count} anomalies")
+        print(f"   ✅ Batch {epoch_id} processed: {len(points)} log entries stored in Qdrant")
         
     except Exception as e:
-        print(f"    Qdrant insertion failed: {e}")
+        print(f"   ❌ Qdrant insertion failed: {e}")
 
 # Start streaming
 print("🎯 Starting HDFS line-level log processing stream...")
