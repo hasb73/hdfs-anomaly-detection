@@ -253,16 +253,16 @@ def initialize_connections():
     try:
         redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
         redis_client.ping()
-        logger.info(f"✅ Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
+        logger.info(f" Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
     except Exception as e:
-        logger.error(f"❌ Redis connection failed: {e}")
+        logger.error(f" Redis connection failed: {e}")
         redis_client = None
     
     try:
         qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
-        logger.info(f"✅ Connected to Qdrant at {QDRANT_HOST}:{QDRANT_PORT}")
+        logger.info(f" Connected to Qdrant at {QDRANT_HOST}:{QDRANT_PORT}")
     except Exception as e:
-        logger.error(f"❌ Qdrant connection failed: {e}")
+        logger.error(f" Qdrant connection failed: {e}")
         qdrant_client = None
 
 def get_text_hash(text: str) -> str:
@@ -335,7 +335,7 @@ def search_qdrant_by_text(text: str, limit: int = 1) -> Optional[List[Dict]]:
         stats['qdrant_queries'] += 1
         
         if results:
-            logger.info(f"🎯 Qdrant found {len(results)} similar embeddings")
+            logger.info(f" Qdrant found {len(results)} similar embeddings")
             return [
                 {
                     'id': result.id,
@@ -454,20 +454,20 @@ def load_ensemble_model():
     global models_cache, scaler
     
     if os.path.exists(MODEL_PATH):
-        logger.info(f"📥 Loading ensemble model from {MODEL_PATH}")
+        logger.info(f"Loading ensemble model from {MODEL_PATH}")
         models_cache = joblib.load(MODEL_PATH)
         scaler = models_cache.get('scaler', None)
         models = models_cache.get('models', {})
         model_weights = models_cache.get('model_weights', {})
-        logger.info(f"✅ Loaded ensemble with {len(models)} models")
+        logger.info(f" Loaded ensemble with {len(models)} models")
         
         # Log model weights if available
         if model_weights:
-            logger.info("🎯 Model weights for weighted voting:")
+            logger.info(" Model weights for weighted voting:")
             for name, weight in model_weights.items():
                 logger.info(f"   {name}: {weight:.4f}")
         else:
-            logger.info("⚖️ Using equal weights (simple average voting)")
+            logger.info(" Using equal weights (simple average voting)")
         
         if 'ensemble_score' in models_cache:
             score = models_cache['ensemble_score']
@@ -475,7 +475,7 @@ def load_ensemble_model():
             
         return True
     else:
-        logger.error(f"❌ Model not found at {MODEL_PATH}")
+        logger.error(f" Model not found at {MODEL_PATH}")
         return False
 
 @app.on_event('startup')
@@ -493,17 +493,17 @@ async def startup_event():
     
     # Load model
     if not load_ensemble_model():
-        logger.warning("⚠️ Warning: No ensemble model loaded. Training required.")
+        logger.warning(" Warning: No ensemble model loaded. Training required.")
     
     # Start Kafka consumer in background
     if os.environ.get('ENABLE_KAFKA_CONSUMER', 'true').lower() == 'true':
         threading.Thread(target=enhanced_kafka_consumer_worker, daemon=True).start()
-        logger.info("📡 Enhanced Kafka consumer started")
+        logger.info("Enhanced Kafka consumer started")
     
     # Start periodic performance snapshot
     threading.Thread(target=performance_monitor, daemon=True).start()
     
-    logger.info("✅ Real-Time Anomaly Detection Engine ready!")
+    logger.info(" Real-Time Anomaly Detection Engine ready!")
 
 def get_embedding(text: str) -> Optional[List[float]]:
     """Get embedding for a single text"""
@@ -525,9 +525,8 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
     """Make prediction using ensemble model with weighted voting including Qdrant similarity"""
     global stats
     
-    # LOG THE HDFS ENTRY HERE WHERE WE KNOW IT WORKS
     if text:
-        logger.error(f"🔍 HDFS Log Entry (from predict_ensemble): {text}")
+        logger.info(f" Ingested HDFS Log Entry: {text}")
     
     if models_cache is None:
         raise HTTPException(status_code=500, detail='Ensemble model not loaded')
@@ -605,13 +604,13 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
             if len(set(votes)) == 1:
                 expected_score = float(votes[0])
                 if abs(anomaly_score - expected_score) > 0.00001:
-                    logger.error(f"❌ BUG DETECTED: Unanimous vote {expected_score} but calculated score {anomaly_score}")
+                    logger.error(f" BUG DETECTED: Unanimous vote {expected_score} but calculated score {anomaly_score}")
                 else:
-                    logger.debug(f"✅ Unanimous vote calculation correct: {anomaly_score}")
+                    logger.debug(f" Unanimous vote calculation correct: {anomaly_score}")
         else:
             # Fallback to simple average
             anomaly_score = float(votes.mean())
-            logger.warning("⚠️ All weights are zero, falling back to simple average")
+            logger.warning(" All weights are zero, falling back to simple average")
     else:
         # Fallback to simple average voting (including Qdrant)
         anomaly_score = float(votes.mean())
@@ -622,8 +621,8 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
     final_prediction = int(anomaly_score > anomaly_threshold)
     
     # Threshold decision logging on new line
-    logger.info(f"🎯 Anomaly Score: {anomaly_score:.6f}")
-    logger.info(f"🎯 Final Prediction: {final_prediction} (threshold: {anomaly_threshold})")
+    logger.info(f" Anomaly Score: {anomaly_score:.6f}")
+    logger.info(f" Final Prediction: {final_prediction} (threshold: {anomaly_threshold})")
     
     # Note: It's normal for anomaly_score to equal a model weight when only that model votes 1
     # This happens because weights are pre-normalized, so single-voter scenarios = that model's weight
@@ -667,7 +666,7 @@ def score_text_enhanced(payload: TextPayload):
         # Check cache first
         cached_result = get_cached_result(text_hash)
         if cached_result:
-            logger.info(f"🎯 Returning cached result for: {text}")
+            logger.info(f" Returning cached result for: {text}")
             
             # Count cached API predictions too
             stats['total_predictions'] += 1
@@ -717,9 +716,9 @@ def score_text_enhanced(payload: TextPayload):
         # Log significant events with Qdrant details
         qdrant_info = result['qdrant_details']
         if result['prediction'] == 1:
-            logger.warning(f"🚨 ANOMALY DETECTED: {text} (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
+            logger.warning(f" ANOMALY DETECTED: {text} (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
         else:
-            logger.info(f"✅ NORMAL: {text} (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
+            logger.info(f" NORMAL: {text} (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
         
         # Add detailed voting breakdown to response
         result_dict = enhanced_result.model_dump()
@@ -782,7 +781,7 @@ def score_with_actual_label(text: str, actual_label: int):
         store_anomaly_detection(enhanced_result, actual_label)
         
         # Log result
-        correct = "✅" if predicted_label == actual_label else "❌"
+        correct = "" if predicted_label == actual_label else ""
         logger.info(f"{correct} Pred:{predicted_label} Actual:{actual_label} Score:{result['anomaly_score']:.3f} | {text}")
         
         return {
@@ -954,7 +953,7 @@ def reset_performance_metrics():
             conn.commit()
         logger.info("🗑️ Database tables cleared")
     except Exception as e:
-        logger.error(f"❌ Failed to clear database: {e}")
+        logger.error(f" Failed to clear database: {e}")
     
     logger.info("🔄 ALL performance metrics and database reset")
     return {'message': 'All performance metrics and database reset successfully'}
@@ -970,7 +969,7 @@ def enhanced_kafka_consumer_worker():
             auto_offset_reset='latest'
         )
         
-        logger.info(f"📡 Enhanced Kafka consumer listening to topic: {KAFKA_TOPIC}")
+        logger.info(f"Enhanced Kafka consumer listening to topic: {KAFKA_TOPIC}")
         
         for message in consumer:
             start_time = time.time()
@@ -987,7 +986,7 @@ def enhanced_kafka_consumer_worker():
                     cached_result = get_cached_result(text_hash)
                     if cached_result:
                         result_dict = cached_result
-                        logger.info(f"🎯 Kafka: Using cached result for {text}")
+                        logger.info(f" Kafka: Using cached result for {text}")
                         
                         # Count cached Kafka predictions too
                         stats['total_predictions'] += 1
@@ -998,7 +997,7 @@ def enhanced_kafka_consumer_worker():
                         if actual_label is not None:
                             predicted_label = result_dict.get('predicted_label', 0)
                             update_accuracy_metrics(predicted_label, actual_label)
-                            correct = "✅" if predicted_label == actual_label else "❌"
+                            correct = "" if predicted_label == actual_label else ""
                             logger.info(f"{correct} Kafka (cached): Pred:{predicted_label} Actual:{actual_label} | {text}")
                     else:
                         # Get embedding and predict
@@ -1035,7 +1034,7 @@ def enhanced_kafka_consumer_worker():
                             # Update accuracy if we have actual label
                             if actual_label is not None:
                                 update_accuracy_metrics(result['prediction'], actual_label)
-                                correct = "✅" if result['prediction'] == actual_label else "❌"
+                                correct = "" if result['prediction'] == actual_label else ""
                                 logger.info(f"{correct} Kafka: Pred:{result['prediction']} Actual:{actual_label} | {text}")
                             
                             result_dict = enhanced_result.model_dump()
@@ -1049,7 +1048,7 @@ def enhanced_kafka_consumer_worker():
                     
                     # Log high-confidence anomalies
                     if result_dict.get('predicted_label') == 1 and result_dict.get('confidence', 0) > 0.8:
-                        logger.warning(f"🚨 HIGH-CONFIDENCE KAFKA ANOMALY: {text} (score: {result_dict.get('anomaly_score', 0):.3f})")
+                        logger.warning(f" HIGH-CONFIDENCE KAFKA ANOMALY: {text} (score: {result_dict.get('anomaly_score', 0):.3f})")
                 
             except Exception as e:
                 logger.error(f"Error processing Kafka message: {e}")
