@@ -438,6 +438,9 @@ def get_qdrant_similarity_vote(embedding: List[float], text: str) -> Dict:
 
 def get_embedding_from_qdrant_or_service(text: str) -> Optional[List[float]]:
     """Get embedding from Qdrant first, then embedding service as fallback"""
+
+    if text:
+     logger.info(f" Ingested HDFS Log Entry: {text}")
     
     qdrant_results = search_qdrant_by_text(text)
     if qdrant_results and len(qdrant_results) > 0:
@@ -446,7 +449,7 @@ def get_embedding_from_qdrant_or_service(text: str) -> Optional[List[float]]:
             logger.info(f" Using Qdrant embedding (similarity: {best_match['score']:.3f})")
             return best_match['embedding'] if best_match['embedding'] else get_embedding(text)
     
-    logger.info("Log entry not found in qdrant , Fallback to embedding service")
+    logger.error("Log entry not found in qdrant , Falling back to embedding service")
     return get_embedding(text)
 
 def load_ensemble_model():
@@ -524,9 +527,7 @@ def get_embedding(text: str) -> Optional[List[float]]:
 def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
     """Make prediction using ensemble model with weighted voting including Qdrant similarity"""
     global stats
-    
-    if text:
-        logger.info(f" Ingested HDFS Log Entry: {text}")
+
     
     if models_cache is None:
         raise HTTPException(status_code=500, detail='Ensemble model not loaded')
