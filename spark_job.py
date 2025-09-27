@@ -42,7 +42,7 @@ try:
         collection_name=COLLECTION,
         vectors_config=qm.VectorParams(size=DIM, distance=qm.Distance.COSINE)
     )
-    print(f"✅ Created Qdrant collection: {COLLECTION}")
+    print(f" Created Qdrant collection: {COLLECTION}")
 except Exception as e:
     print(f"⚠️  Collection setup: {e}")
 
@@ -136,7 +136,7 @@ def foreach_batch_hdfs(df, epoch_id):
     
     # Generate embeddings
     try:
-        print("   🧠 Generating embeddings...")
+        print("    Generating embeddings...")
         resp = requests.post(
             EMBEDDING_SERVICE_URL, 
             json={"texts": messages}, 
@@ -178,17 +178,17 @@ def foreach_batch_hdfs(df, epoch_id):
     
     # Insert into Qdrant
     try:
-        print(f"   💾 Inserting {len(points)} points to Qdrant...")
+        print(f"    Inserting {len(points)} points to Qdrant...")
         qdrant.upsert(
             collection_name=COLLECTION,
             points=points,
             wait=True
         )
         
-        print(f"   ✅ Batch {epoch_id} processed: {len(points)} log entries stored in Qdrant")
+        print(f"    Batch {epoch_id} processed: {len(points)} log entries stored in Qdrant")
         
     except Exception as e:
-        print(f"   ❌ Qdrant insertion failed: {e}")
+        print(f"    Qdrant insertion failed: {e}")
 
 # Start streaming
 print("🎯 Starting HDFS line-level log processing stream...")

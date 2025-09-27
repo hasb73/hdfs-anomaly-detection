@@ -335,7 +335,7 @@ def search_qdrant_by_text(text: str, limit: int = 1) -> Optional[List[Dict]]:
         stats['qdrant_queries'] += 1
         
         if results:
-            logger.info(f" Qdrant found {len(results)} similar embeddings")
+            logger.info(f" Qdrant found {len(results)} similar vector embeddings")
             return [
                 {
                     'id': result.id,
@@ -446,7 +446,7 @@ def get_embedding_from_qdrant_or_service(text: str) -> Optional[List[float]]:
     if qdrant_results and len(qdrant_results) > 0:
         best_match = qdrant_results[0]
         if best_match['score'] > 0.98:
-            logger.info(f" Using Qdrant embedding (similarity: {best_match['score']:.3f})")
+            logger.info(f" Using the stored Vector embedding (similarity: {best_match['score']:.3f})")
             return best_match['embedding'] if best_match['embedding'] else get_embedding(text)
     
     logger.error("Log entry not found in qdrant , Falling back to embedding service")

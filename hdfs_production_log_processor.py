@@ -179,9 +179,9 @@ class HDFSLogTailer(FileSystemEventHandler):
                 self.position = self.file_handle.tell()
                 logger.info(f"📖 Opened log file: {self.log_file_path} (position: {self.position})")
             else:
-                logger.error(f"❌ Log file not found: {self.log_file_path}")
+                logger.error(f" Log file not found: {self.log_file_path}")
         except Exception as e:
-            logger.error(f"❌ Failed to open log file: {e}")
+            logger.error(f" Failed to open log file: {e}")
     
     def _close_log_file(self):
         """Close the log file"""
@@ -206,7 +206,7 @@ class HDFSLogTailer(FileSystemEventHandler):
             
             return new_lines
         except Exception as e:
-            logger.error(f"❌ Error reading log file: {e}")
+            logger.error(f" Error reading log file: {e}")
             self.stats['errors'] += 1
             return []
     
@@ -254,7 +254,7 @@ class HDFSLogTailer(FileSystemEventHandler):
                     logger.debug(f"📝 {log_level}: {processed_line[:100]}...")
                 
             except Exception as e:
-                logger.error(f"❌ Error processing line: {e}")
+                logger.error(f" Error processing line: {e}")
                 self.stats['errors'] += 1
     
     def on_modified(self, event):
@@ -289,9 +289,9 @@ class HDFSLogTailer(FileSystemEventHandler):
                 # Return to end for real-time processing
                 self.file_handle.seek(0, 2)
                 
-                logger.info(f"✅ Processed {len(recent_lines)} recent log lines for context")
+                logger.info(f" Processed {len(recent_lines)} recent log lines for context")
         except Exception as e:
-            logger.error(f"❌ Error during initial processing: {e}")
+            logger.error(f" Error during initial processing: {e}")
     
     def get_stats(self) -> Dict:
         """Get processing statistics"""
@@ -342,10 +342,10 @@ class HDFSProductionLogProcessor:
                 acks='all',
                 retries=3
             )
-            logger.info(f"✅ Kafka producer initialized: {self.kafka_servers}")
+            logger.info(f" Kafka producer initialized: {self.kafka_servers}")
             return True
         except Exception as e:
-            logger.error(f"❌ Kafka initialization failed: {e}")
+            logger.error(f" Kafka initialization failed: {e}")
             return False
     
     def check_scoring_service(self):
@@ -354,23 +354,23 @@ class HDFSProductionLogProcessor:
             response = requests.get(f"{self.scoring_service_url}/health", timeout=5)
             if response.status_code == 200:
                 health = response.json()
-                logger.info(f"✅ Scoring service healthy: {health['status']}")
+                logger.info(f" Scoring service healthy: {health['status']}")
                 return True
             else:
-                logger.warning(f"⚠️ Scoring service unhealthy: {response.status_code}")
+                logger.warning(f" Scoring service unhealthy: {response.status_code}")
                 return False
         except Exception as e:
-            logger.warning(f"⚠️ Scoring service check failed: {e}")
+            logger.warning(f" Scoring service check failed: {e}")
             return False
     
     def validate_log_file(self):
         """Validate that the log file exists and is readable"""
         if not os.path.exists(self.log_file_path):
-            logger.error(f"❌ Log file not found: {self.log_file_path}")
+            logger.error(f" Log file not found: {self.log_file_path}")
             return False
         
         if not os.access(self.log_file_path, os.R_OK):
-            logger.error(f"❌ Log file not readable: {self.log_file_path}")
+            logger.error(f" Log file not readable: {self.log_file_path}")
             return False
         
         # Get file size
@@ -420,11 +420,11 @@ class HDFSProductionLogProcessor:
         
         # Validate prerequisites
         if not self.validate_log_file():
-            logger.error("❌ Log file validation failed")
+            logger.error(" Log file validation failed")
             return False
         
         if not self.initialize_kafka():
-            logger.error("❌ Kafka initialization failed")
+            logger.error(" Kafka initialization failed")
             return False
         
         # Check scoring service (optional)
@@ -471,7 +471,7 @@ class HDFSProductionLogProcessor:
     
     def stop(self):
         """Stop the log processor gracefully"""
-        logger.info("🛑 Stopping HDFS log processor...")
+        logger.info(" Stopping HDFS log processor...")
         
         self.running = False
         
@@ -488,7 +488,7 @@ class HDFSProductionLogProcessor:
             self.producer.flush()
             self.producer.close()
         
-        logger.info("✅ HDFS log processor stopped gracefully")
+        logger.info(" HDFS log processor stopped gracefully")
 
 def main():
     """Main entry point"""
@@ -512,11 +512,11 @@ def main():
     matching_files = glob.glob(log_file_path)
     
     if not matching_files:
-        logger.error(f"❌ No log files found matching pattern: {log_file_path}")
+        logger.error(f" No log files found matching pattern: {log_file_path}")
         sys.exit(1)
     
     if len(matching_files) > 1:
-        logger.warning(f"⚠️ Multiple files found, using: {matching_files[0]}")
+        logger.warning(f" Multiple files found, using: {matching_files[0]}")
     
     actual_log_file = matching_files[0]
     
@@ -537,10 +537,10 @@ def main():
     success = processor.start(initial_lines=0)  # Only process NEW log entries
     
     if success:
-        logger.info("✅ HDFS log processing completed successfully!")
+        logger.info(" HDFS log processing completed successfully!")
         sys.exit(0)
     else:
-        logger.error("❌ HDFS log processing failed!")
+        logger.error(" HDFS log processing failed!")
         sys.exit(1)
 
 if __name__ == "__main__":
