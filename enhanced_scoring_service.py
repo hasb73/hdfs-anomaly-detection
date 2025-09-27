@@ -446,7 +446,7 @@ def get_embedding_from_qdrant_or_service(text: str) -> Optional[List[float]]:
             logger.info(f" Using Qdrant embedding (similarity: {best_match['score']:.3f})")
             return best_match['embedding'] if best_match['embedding'] else get_embedding(text)
     
-    logger.info("🔄 Fallback to embedding service")
+    logger.info(" Fallback to embedding service")
     return get_embedding(text)
 
 def load_ensemble_model():
@@ -483,7 +483,7 @@ async def startup_event():
     """Initialize the anomaly detection engine"""
     global models_cache, scaler
     
-    logger.info("🚀 Starting Real-Time HDFS Anomaly Detection Engine...")
+    logger.info("Starting Real-Time HDFS Anomaly Detection Engine...")
     
     # Initialize database
     init_database()
@@ -614,7 +614,7 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
     else:
         # Fallback to simple average voting (including Qdrant)
         anomaly_score = float(votes.mean())
-        logger.debug("🔄 Using simple average voting (including Qdrant)")
+        logger.debug(" Using simple average voting (including Qdrant)")
     
     # Lower threshold for better recall
     anomaly_threshold = 0.4
