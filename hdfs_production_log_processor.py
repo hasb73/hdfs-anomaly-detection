@@ -177,7 +177,7 @@ class HDFSLogTailer(FileSystemEventHandler):
                 # Start from end of file for real-time processing
                 self.file_handle.seek(0, 2)  # Seek to end
                 self.position = self.file_handle.tell()
-                logger.info(f"📖 Opened log file: {self.log_file_path} (position: {self.position})")
+                logger.info(f"Opened log file: {self.log_file_path} (position: {self.position})")
             else:
                 logger.error(f" Log file not found: {self.log_file_path}")
         except Exception as e:
@@ -270,10 +270,10 @@ class HDFSLogTailer(FileSystemEventHandler):
         Set lines_from_end=0 to skip initial processing and only process new entries
         """
         if lines_from_end <= 0:
-            logger.info("📚 Skipping initial processing - will only process NEW log entries")
+            logger.info("Skipping initial processing - will only process NEW log entries")
             return
             
-        logger.info(f"📚 Processing last {lines_from_end} lines for context...")
+        logger.info(f" Processing last {lines_from_end} lines for context...")
         
         try:
             if self.file_handle:
@@ -381,7 +381,7 @@ class HDFSProductionLogProcessor:
     def setup_signal_handlers(self):
         """Setup signal handlers for graceful shutdown"""
         def signal_handler(signum, frame):
-            logger.info(f"📶 Received signal {signum}, shutting down gracefully...")
+            logger.info(f" Received signal {signum}, shutting down gracefully...")
             self.stop()
             sys.exit(0)
         
@@ -395,7 +395,7 @@ class HDFSProductionLogProcessor:
                 time.sleep(self.stats_interval)
                 if self.log_tailer and self.running:
                     stats = self.log_tailer.get_stats()
-                    logger.info(f"📊 Stats: {stats['lines_read']} read, "
+                    logger.info(f" Stats: {stats['lines_read']} read, "
                               f"{stats['lines_processed']} processed, "
                               f"{stats['lines_sent_to_kafka']} sent to Kafka, "
                               f"{stats['errors']} errors, "
@@ -403,7 +403,7 @@ class HDFSProductionLogProcessor:
         
         stats_thread = threading.Thread(target=report_stats, daemon=True)
         stats_thread.start()
-        logger.info(f"📈 Statistics reporter started (interval: {self.stats_interval}s)")
+        logger.info(f"Statistics reporter started (interval: {self.stats_interval}s)")
     
     def start(self, initial_lines: int = 0):
         """
@@ -450,12 +450,12 @@ class HDFSProductionLogProcessor:
         self.running = True
         self.start_stats_reporter()
         
-        logger.info(f"👀 Watching log file: {self.log_file_path}")
-        logger.info(f"📡 Streaming to Kafka topic: {self.kafka_topic}")
+        logger.info(f" Watching log file: {self.log_file_path}")
+        logger.info(f"Streaming to Kafka topic: {self.kafka_topic}")
         if initial_lines == 0:
-            logger.info("🔄 Real-time processing started - ONLY NEW log entries will be processed")
+            logger.info(" Real-time processing started - ONLY NEW log entries will be processed")
         else:
-            logger.info(f"🔄 Real-time processing started - processed {initial_lines} recent lines for context")
+            logger.info(f" Real-time processing started - processed {initial_lines} recent lines for context")
         logger.info("Press Ctrl+C to stop.")
         
         try:
@@ -481,7 +481,7 @@ class HDFSProductionLogProcessor:
         
         if self.log_tailer:
             final_stats = self.log_tailer.get_stats()
-            logger.info(f"📊 Final stats: {final_stats}")
+            logger.info(f" Final stats: {final_stats}")
             self.log_tailer.stop()
         
         if self.producer:
@@ -520,7 +520,7 @@ def main():
     
     actual_log_file = matching_files[0]
     
-    logger.info(f"🎯 Configuration:")
+    logger.info(f"   Configuration:")
     logger.info(f"   Log File: {actual_log_file}")
     logger.info(f"   Kafka Servers: {kafka_servers}")
     logger.info(f"   Kafka Topic: {kafka_topic}")
