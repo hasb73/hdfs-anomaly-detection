@@ -587,7 +587,7 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
             anomaly_score = float(np.average(votes, weights=weights_normalized))
             
             # Enhanced logging to show voting details on separate lines
-            logger.info("🎯 Weighted Voting Results:")
+            logger.info("Weighted Voting Results:")
             for i, (name, vote, weight) in enumerate(zip(model_names, votes, weights_normalized)):
                 logger.info(f"  {name}: vote={vote}, weight={weight:.4f}")
             
@@ -657,6 +657,7 @@ def score_text_enhanced(payload: TextPayload):
         
         # Log the original HDFS log entry for all predictions
         logger.info(f"🔍 HDFS Log Entry: {text}")
+        print(f"DEBUG: HDFS Log Entry should have been logged: {text[:100]}...")  # Debug print
         
         # Check cache first
         cached_result = get_cached_result(text_hash)
