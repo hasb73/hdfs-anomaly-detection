@@ -22,6 +22,11 @@ import sqlite3
 from contextlib import contextmanager
 import pandas as pd
 from collections import defaultdict
+import warnings
+
+# Suppress specific deprecation warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*search.*method is deprecated.*")
+warnings.filterwarnings("ignore", message=".*PydanticDeprecated.*")
 
 # Configure logging
 logging.basicConfig(
@@ -319,13 +324,13 @@ def search_qdrant_by_text(text: str, limit: int = 1) -> Optional[List[Dict]]:
         if not embedding:
             return None
         
-        results = qdrant_client.search(
+        results = qdrant_client.query_points(
             collection_name=QDRANT_COLLECTION,
-            query_vector=embedding,
+            query=embedding,
             limit=limit,
             score_threshold=0.95,
             with_payload=True
-        )
+        ).points
         
         stats['qdrant_queries'] += 1
         
@@ -355,21 +360,21 @@ def get_qdrant_similarity_vote(embedding: List[float], text: str) -> Dict:
     
     try:
         # Search for similar embeddings with different thresholds
-        high_similarity_results = qdrant_client.search(
+        high_similarity_results = qdrant_client.query_points(
             collection_name=QDRANT_COLLECTION,
-            query_vector=embedding,
+            query=embedding,
             limit=10,
             score_threshold=0.90,  # High similarity threshold
             with_payload=True
-        )
+        ).points
         
-        medium_similarity_results = qdrant_client.search(
+        medium_similarity_results = qdrant_client.query_points(
             collection_name=QDRANT_COLLECTION,
-            query_vector=embedding,
+            query=embedding,
             limit=20,
             score_threshold=0.75,  # Medium similarity threshold
             with_payload=True
-        )
+        ).points
         
         stats['qdrant_queries'] += 2
         
@@ -581,13 +586,13 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
             weights_normalized = weights / weights.sum()  # Normalize weights
             anomaly_score = float(np.average(votes, weights=weights_normalized))
             
-            # Enhanced logging to show voting details
-            voting_details = []
+            # Enhanced logging to show voting details on separate lines
+            logger.info("🎯 Weighted Voting Results:")
             for i, (name, vote, weight) in enumerate(zip(model_names, votes, weights_normalized)):
-                voting_details.append(f"{name}:{vote}(w:{weight:.3f})")
+                logger.info(f"  {name}: vote={vote}, weight={weight:.4f}")
             
             simple_avg = float(votes.mean())
-            logger.info(f"🎯 Weighted Voting: [{', '.join(voting_details)}] → Score:{anomaly_score:.4f} (simple_avg:{simple_avg:.4f})")
+            logger.info(f"  Final weighted score: {anomaly_score:.4f} (simple average would be: {simple_avg:.4f})")
             
             # Debug logging to catch the bug
             logger.debug(f"🔍 Debug: votes={votes.tolist()}, normalized_weights={weights_normalized.tolist()}, calculated_score={anomaly_score}")
@@ -612,8 +617,9 @@ def predict_ensemble(embedding: np.ndarray, text: str = "") -> Dict:
     anomaly_threshold = 0.4
     final_prediction = int(anomaly_score > anomaly_threshold)
     
-    # Debug logging for threshold decision (changed to INFO to ensure it shows)
-    logger.info(f"🎯 THRESHOLD DECISION: score={anomaly_score:.6f}, threshold={anomaly_threshold}, score>threshold={anomaly_score > anomaly_threshold}, prediction={final_prediction}")
+    # Threshold decision logging on new line
+    logger.info(f"🎯 Anomaly Score: {anomaly_score:.6f}")
+    logger.info(f"🎯 Final Prediction: {final_prediction} (threshold: {anomaly_threshold})")
     
     # Note: It's normal for anomaly_score to equal a model weight when only that model votes 1
     # This happens because weights are pre-normalized, so single-voter scenarios = that model's weight
@@ -648,6 +654,9 @@ def score_text_enhanced(payload: TextPayload):
     try:
         text = payload.text
         text_hash = get_text_hash(text)
+        
+        # Log the original HDFS log entry for all predictions
+        logger.info(f"🔍 HDFS Log Entry: {text}")
         
         # Check cache first
         cached_result = get_cached_result(text_hash)
@@ -696,7 +705,7 @@ def score_text_enhanced(payload: TextPayload):
         store_anomaly_detection(enhanced_result)
         
         # Cache the result
-        result_dict = enhanced_result.dict()
+        result_dict = enhanced_result.model_dump()
         cache_result(text_hash, result_dict)
         
         # Log significant events with Qdrant details
@@ -707,7 +716,7 @@ def score_text_enhanced(payload: TextPayload):
             logger.info(f"✅ NORMAL: {text} (score: {result['anomaly_score']:.3f}, qdrant_vote: {qdrant_info['vote']}, similar: {qdrant_info['similar_count']}, time: {processing_time:.1f}ms)")
         
         # Add detailed voting breakdown to response
-        result_dict = enhanced_result.dict()
+        result_dict = enhanced_result.model_dump()
         result_dict['voting_breakdown'] = {
             'traditional_models': {k: v for k, v in result['model_votes'].items() if k != 'qdrant_similarity'},
             'qdrant_similarity': result['model_votes'].get('qdrant_similarity', 0),
@@ -1023,7 +1032,7 @@ def enhanced_kafka_consumer_worker():
                                 correct = "✅" if result['prediction'] == actual_label else "❌"
                                 logger.info(f"{correct} Kafka: Pred:{result['prediction']} Actual:{actual_label} | {text}")
                             
-                            result_dict = enhanced_result.dict()
+                            result_dict = enhanced_result.model_dump()
                             
                             # Cache the result
                             cache_result(text_hash, result_dict, ttl=1800)
