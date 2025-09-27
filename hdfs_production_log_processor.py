@@ -375,7 +375,7 @@ class HDFSProductionLogProcessor:
         
         # Get file size
         file_size = os.path.getsize(self.log_file_path)
-        logger.info(f"📁 Log file found: {self.log_file_path} ({file_size:,} bytes)")
+        logger.info(f"Log file found: {self.log_file_path} ({file_size:,} bytes)")
         return True
     
     def setup_signal_handlers(self):
@@ -412,7 +412,7 @@ class HDFSProductionLogProcessor:
         Args:
             initial_lines: Number of recent lines to process for context (0 = only new entries)
         """
-        logger.info("🚀 Starting HDFS Production Log Processor")
+        logger.info(" Starting HDFS Production Log Processor")
         logger.info("=" * 60)
         
         # Setup signal handlers
