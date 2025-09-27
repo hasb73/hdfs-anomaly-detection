@@ -655,9 +655,10 @@ def score_text_enhanced(payload: TextPayload):
         text = payload.text
         text_hash = get_text_hash(text)
         
-        # Log the original HDFS log entry for all predictions
-        logger.info(f"🔍 HDFS Log Entry: {text}")
-        print(f"DEBUG: HDFS Log Entry should have been logged: {text[:100]}...")  # Debug print
+        # Log the original HDFS log entry for all predictions - UPDATED VERSION
+        logger.error(f"🔍 HDFS Log Entry: {text}")  # Using ERROR level to ensure it shows
+        logger.warning(f"🔍 DEBUG: This message should appear if this code is running: {text[:100]}...")
+        print(f"CONSOLE DEBUG: HDFS Log Entry should have been logged: {text[:100]}...")  # Debug print
         
         # Check cache first
         cached_result = get_cached_result(text_hash)
