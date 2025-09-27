@@ -138,8 +138,12 @@ class HDFSLogPreprocessor:
         if not log_line or not log_line.strip():
             return False
         
-        # FILTERING REMOVED - Process ALL log entries for testing
-        return True
+        # Only process log entries that contain block operations (blk_)
+        # This focuses on block-level operations in HDFS
+        if 'blk_' in log_line:
+            return True
+        
+        return False
 
 class HDFSLogTailer(FileSystemEventHandler):
     """Tails HDFS log files and processes new log entries"""
