@@ -329,7 +329,7 @@ class HDFSProductionLogProcessor:
         
         # Statistics reporting
         self.last_stats_time = time.time()
-        self.stats_interval = 10  # Report stats every 10 seconds
+        self.stats_interval = 5  # Report stats every specified seconds
         
     def initialize_kafka(self):
         """Initialize Kafka producer"""
