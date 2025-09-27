@@ -96,9 +96,11 @@ parsed_df = json_df.withColumn(
     col("parsed_data.label").alias("label")
 ).filter(col("message").isNotNull())
 
-def generate_point_id(message: str, timestamp: str) -> int:
-    """Generate consistent point ID for deduplication"""
-    return abs(hash(f"{message}_{timestamp}")) % (2**63)
+def generate_point_id(message: str) -> int:
+    """Generate consistent point ID for deduplication based on processed message text"""
+    # The hdfs_production_log_processor already normalizes timestamps to "TIMESTAMP"
+    # So we can use just the processed message text for consistent deduplication
+    return abs(hash(message)) % (2**63)
 
 def check_existing_points(point_ids: List[int]) -> Set[int]:
     """Check which point IDs already exist in Qdrant"""
@@ -152,15 +154,16 @@ def foreach_batch_hdfs(df, epoch_id):
     
     for row in rows:
         message = row['message']
+        original_text = row['original_text']
         timestamp = row['timestamp']
-        point_id = generate_point_id(message, timestamp)
+        point_id = generate_point_id(message)
         
         messages.append(message)
         point_ids.append(point_id)
         metadata.append({
             'point_id': point_id,
             'timestamp': timestamp,
-            'original_text': row['original_text'],
+            'original_text': original_text,
             'log_level': row['log_level'],
             'source': row['source'],
             'node_type': row['node_type']
@@ -170,6 +173,11 @@ def foreach_batch_hdfs(df, epoch_id):
     print("  Checking for existing entries in Qdrant...")
     existing_ids = check_existing_points(point_ids)
     
+    # Debug: Show some point IDs for verification
+    if len(point_ids) > 0:
+        print(f"  Sample point IDs: {point_ids[:3]}...")
+        print(f"  Found {len(existing_ids)} existing entries in Qdrant")
+    
     # Filter out existing entries
     new_messages = []
     new_metadata = []
@@ -178,6 +186,9 @@ def foreach_batch_hdfs(df, epoch_id):
         if meta['point_id'] not in existing_ids:
             new_messages.append(message)
             new_metadata.append(meta)
+        else:
+            # Debug: Show what we're skipping
+            print(f"  Skipping duplicate: ID {meta['point_id']} - {message[:50]}...")
     
     skipped_count = len(messages) - len(new_messages)
     if skipped_count > 0:
