@@ -446,7 +446,7 @@ def get_embedding_from_qdrant_or_service(text: str) -> Optional[List[float]]:
             logger.info(f" Using Qdrant embedding (similarity: {best_match['score']:.3f})")
             return best_match['embedding'] if best_match['embedding'] else get_embedding(text)
     
-    logger.info(" Fallback to embedding service")
+    logger.info("Log entry not found in qdrant , Fallback to embedding service")
     return get_embedding(text)
 
 def load_ensemble_model():
