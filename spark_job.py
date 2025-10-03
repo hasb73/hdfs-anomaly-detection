@@ -44,7 +44,7 @@ try:
     )
     print(f" Created Qdrant collection: {COLLECTION}")
 except Exception as e:
-    print(f"⚠️  Collection setup: {e}")
+    print(f" Collection setup: {e}")
 
 # Initialize Spark Session
 print("🚀 Initializing Spark Session...")
@@ -104,7 +104,7 @@ parsed_df = json_df.withColumn(
 
 def foreach_batch_hdfs(df, epoch_id):
     """Process each batch of HDFS production log messages"""
-    print(f"\n🔄 Processing production log batch {epoch_id}...")
+    print(f"\n Processing production log batch {epoch_id}...")
     
     # Debug: Show schema and sample data
     print(f"   📊 DataFrame schema: {df.schema}")
@@ -115,9 +115,7 @@ def foreach_batch_hdfs(df, epoch_id):
         print("   No data in batch")
         return
     
-    # Debug: Show first few rows
-    print(f"   📝 Sample row: {rows[0] if rows else 'None'}")
-    
+    # Debug: Show first few rows    
     print(f"   Batch size: {len(rows)} messages")
     
     # Extract messages and metadata - Production mode: no labels needed
@@ -191,7 +189,7 @@ def foreach_batch_hdfs(df, epoch_id):
         print(f"    Qdrant insertion failed: {e}")
 
 # Start streaming
-print("🎯 Starting HDFS line-level log processing stream...")
+print(" Starting HDFS line-level log processing stream...")
 query = parsed_df.writeStream \
     .foreachBatch(foreach_batch_hdfs) \
     .outputMode("append") \
