@@ -4,7 +4,7 @@
 # This script starts the enhanced scoring service in the background
 echo "stopping amomaly detection on 8003"
 
-lsof -ti:8003 | xargs kill -9
+lsof -ti:8003 | xargs -r kill -9
 
 echo " Starting HDFS Anomaly Detection Engine V2 in background..."
 
