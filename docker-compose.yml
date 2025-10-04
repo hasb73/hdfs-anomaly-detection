@@ -35,25 +35,79 @@ services:
     depends_on:
       - qdrant
 
-
-
-  scoring_service:
-    build: ./scoring_service
-    ports: ["8002:8002"]
-    environment:
-      - ENSEMBLE_MODEL_PATH=/ensemble/models/line_level_ensemble/line_level_ensemble_results.joblib
-      - EMBEDDING_SERVICE_URL=http://embedding:8000
-    volumes:
-      - ./models:/models
-    restart: unless-stopped
-    depends_on:
-      - embedding
-      - redis
-
   redis:
     image: redis:7.0-alpine
     ports: ["6379:6379"]
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: anomaly-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Basic Grafana configuration
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      
+      # Security settings
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_SECURITY_COOKIE_SECURE=false
+      - GF_SECURITY_COOKIE_SAMESITE=lax
+      
+      # Plugin installation
+      - GF_INSTALL_PLUGINS=frser-sqlite-datasource
+      
+      # Database settings
+      - GF_DATABASE_TYPE=sqlite3
+      - GF_DATABASE_PATH=/var/lib/grafana/grafana.db
+      
+      # Paths
+      - GF_PATHS_DATA=/var/lib/grafana
+      - GF_PATHS_LOGS=/var/log/grafana
+      - GF_PATHS_PLUGINS=/var/lib/grafana/plugins
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      
+      # Server settings
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      
+      # Analytics
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      
+    volumes:
+      # Mount the anomaly detection database
+      - ./anomaly-detection-service/anomaly_detection.db:/var/lib/grafana/data/anomaly_detection.db:ro
+      
+      # Persistent Grafana data
+      - grafana-data:/var/lib/grafana
+      - grafana-logs:/var/log/grafana
+      
+      # Configuration provisioning
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      
+    networks:
+      - grafana-network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 
 volumes:
   qdrant_storage:
+  grafana-data:
+    driver: local
+  grafana-logs:
+    driver: local
+
+networks:
+  grafana-network:
+    driver: bridge
